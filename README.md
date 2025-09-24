@@ -1,41 +1,49 @@
-````markdown
 # AI Privacy Assistant — PDF Anonymizer (End‑to‑End)
 
-A production‑style, **AI data privacy assistant** that detects and anonymizes Personally Identifiable Information (PII) in PDFs. It supports:
+A production‑style, PhD‑level **AI data privacy assistant** that detects and anonymizes Personally Identifiable Information (PII) in PDFs. It supports:
 
-- **Regex + spaCy NER (primary)** detection with **LLM assist** for context‑dependent PII.
-- **Three anonymization modes** on rebuilt PDFs: `mask`, `redact`, and `pseudo` (realistic replacements).
-- **Layout‑preserving redaction** (overlay of black boxes) for native and scanned PDFs (OCR).
-- A **modern,single‑page UI** (HTML/JS) that runs on the **same port** as the API.
-- **One‑command Docker run** with reproducible dependencies.
+* **Regex + spaCy NER (primary)** detection with **optional LLM assist** for context‑dependent PII.
+* **Three anonymization modes** on rebuilt PDFs: `mask`, `redact`, and `pseudo` (realistic replacements).
+* **Layout‑preserving redaction** (overlay of black boxes) for native and scanned PDFs (OCR).
+* A **modern, Amazon‑style single‑page UI** (HTML/JS) that runs on the **same port** as the API.
+* **One‑command Docker run** with reproducible dependencies.
 
 > **Why this project?** Most “PII anonymizers” are either toy scripts or single‑tech demos. This repo showcases **industry‑grade architecture**: hybrid detection (regex+NER+LLM), OCR fallback, visual overlays on original PDFs, reporting bundles, clean services, tests, and Dockerized reproducibility.
 
 ---
 
 ## Features
-- **Detectors**
-  - **Regex** for emails/phones/IDs (high precision).
-  - **spaCy NER** for PERSON/ORG/GPE, etc.
-  - **LLM** to catch context‑dependent PII (disabled by default unless `OPENAI_API_KEY` is set).
-- **Anonymization Modes** (rebuilt PDFs)
-  - `mask`: replace with angle‑bracket tags (e.g., `<PERSON_1>`)
-  - `redact`: black bars in rebuilt document text
-  - `pseudo`: realistic replacements via Faker
-- **Layout‑Preserving Redaction**
-  - Draw **black boxes** on **original PDF** (visual overlay).
-  - Works for **native PDFs** and **scanned PDFs** via **Tesseract OCR** boxes mapped to PDF coordinates.
-- **OCR Fallback**
-  - If a PDF is image‑heavy, the app automatically switches to OCR detection.
-- **UI/UX**
-  - drag‑and‑drop upload, activity log, toasts.
-  - Overlay toggle auto‑locks Mode to `redact` and disables “Include report”.
-- **Reports**
-  - Download a **ZIP bundle** with: sanitized PDF, `privacy_report.json`, and `privacy_report.pdf`.
-- **One‑Port Run**
-  - `run_all.py` serves **/ui** (frontend) and the API on **port 8000**.
-- **Dockerized**
-  - `docker compose up --build` — no local setup headache.
+
+* **Detectors**
+
+  * **Regex** for emails/phones/IDs (high precision).
+  * **spaCy NER** for PERSON/ORG/GPE, etc.
+  * **LLM (optional)** to catch context‑dependent PII (disabled by default unless `OPENAI_API_KEY` is set).
+* **Anonymization Modes** (rebuilt PDFs)
+
+  * `mask`: replace with angle‑bracket tags (e.g., `<PERSON_1>`)
+  * `redact`: black bars in rebuilt document text
+  * `pseudo`: realistic replacements via Faker
+* **Layout‑Preserving Redaction**
+
+  * Draw **black boxes** on **original PDF** (visual overlay).
+  * Works for **native PDFs** and **scanned PDFs** via **Tesseract OCR** boxes mapped to PDF coordinates.
+* **OCR Fallback**
+
+  * If a PDF is image‑heavy, the app automatically switches to OCR detection.
+* **UI/UX**
+
+  * Amazon‑inspired theme, drag‑and‑drop upload, activity log, toasts.
+  * Overlay toggle auto‑locks Mode to `redact` and disables “Include report”.
+* **Reports**
+
+  * Download a **ZIP bundle** with: sanitized PDF, `privacy_report.json`, and `privacy_report.pdf`.
+* **One‑Port Run**
+
+  * `run_all.py` serves **/ui** (frontend) and the API on **port 8000**.
+* **Dockerized**
+
+  * `docker compose up --build` — no local setup headache.
 
 ---
 
@@ -66,7 +74,7 @@ A production‑style, **AI data privacy assistant** that detects and anonymizes 
                                                              │
                                                              ▼
                                                      outputs/*.pdf/.zip
-````
+```
 
 *Regex + spaCy run locally and are the **primary** detectors. LLM assist is optional.*
 
@@ -168,7 +176,7 @@ docker compose up --build
 
 **Notes**
 
-* The Dockerfile installs \`\` for faster builds. Ensure `SPACY_MODEL=en_core_web_md` (default) or switch both Dockerfile and env to `lg` if you need extra accuracy.
+* The Dockerfile installs **`en_core_web_md`** for faster builds. Ensure `SPACY_MODEL=en_core_web_md` (default) or switch both Dockerfile and env to `lg` if you need extra accuracy.
 * Volumes mount `frontend/` and `outputs/` so you can iterate and keep artifacts on host.
 
 ---
@@ -287,7 +295,4 @@ python run_all.py   # http://127.0.0.1:8000/ui/
 # Docker
 export OPENAI_API_KEY=sk-...   # optional
 docker compose up --build      # http://localhost:8000/ui/
-```
-
-```
 ```
