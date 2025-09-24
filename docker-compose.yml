@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  privacy-assistant:
+    build: .
+    container_name: privacy-assistant
+    ports:
+      - "8000:8000"
+    environment:
+      SPACY_MODEL: en_core_web_md
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"   # pass from host env or .env
+      USE_LLM: "${USE_LLM:-true}"
+      OCR_DPI: "${OCR_DPI:-300}"
+      IMAGE_DOC_EMPTY_RATIO: "${IMAGE_DOC_EMPTY_RATIO:-0.6}"
+    volumes:
+      - ./outputs:/app/outputs
+      - ./frontend:/app/frontend

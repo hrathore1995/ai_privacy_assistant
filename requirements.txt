@@ -1,0 +1,16 @@
+aiofiles
+fastapi
+uvicorn[standard]
+python-multipart
+
+pdfplumber
+reportlab
+PyPDF2
+pdf2image
+pytesseract
+pillow
+
+spacy==3.8.2
+openai>=1.40
+python-dotenv
+faker

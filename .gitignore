@@ -1,0 +1,61 @@
+# --- OS / Editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.code-workspace
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.cache/
+.ipynb_checkpoints/
+.python-version
+__pypackages__/
+
+# --- Virtual envs ---
+venv/
+.venv/
+
+# --- Env / Secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Logs / Temp ---
+*.log
+*.pid
+tmp/
+temp/
+
+# --- Build / Dist ---
+build/
+dist/
+*.spec
+
+# --- Frontend ---
+node_modules/
+*.lock
+npm-debug.log*
+yarn-error.log*
+
+# --- App outputs (generated files) ---
+outputs/*
+!outputs/.gitkeep
+
+# --- Docker ---
+# (Compose v2 uses docker-compose.yml; override files can be local)
+docker-compose.override.yml

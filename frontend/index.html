@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Privacy Assistant — PDF Anonymizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'amz-navy': '#232F3E',
+            'amz-navy-700': '#1d2733',
+            'amz-orange': '#FF9900',
+            'amz-orange-600': '#f08804',
+            'amz-teal': '#007185',
+            'amz-gold': '#FFA41C',
+          },
+          boxShadow: { 'amz': '0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.12)' }
+        }
+      }
+    }
+  </script>
+  <style>
+    .dropzone.dragover { border-color: rgb(255 153 0); background: rgba(255,153,0,0.06); }
+    .scroll-slim::-webkit-scrollbar{height:8px;width:8px}
+    .scroll-slim::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <!-- Top Nav (simplified) -->
+  <header class="sticky top-0 z-40 bg-amz-navy text-white shadow">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="h-14 flex items-center gap-3">
+        <svg class="w-6 h-6 text-amz-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z"/><path d="M8 10h8M8 14h5"/></svg>
+        <span class="font-semibold tracking-tight">AI Privacy Assistant</span>
+      </div>
+    </div>
+    <div class="bg-amz-navy-700 text-xs text-white/80">
+      <div class="max-w-6xl mx-auto px-4 py-1.5">PDF anonymizer · regex · NER · LLM</div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- Left column: Upload & Settings -->
+      <section class="md:col-span-2 space-y-6">
+        <!-- Upload Card -->
+        <div class="bg-white rounded-xl shadow-amz border border-slate-200 p-5">
+          <h2 class="text-base font-semibold mb-3">Upload PDF</h2>
+          <div id="dropzone" class="dropzone border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center text-center gap-3 transition">
+            <svg class="w-10 h-10 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M20 16.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2.5"/></svg>
+            <p class="text-sm text-slate-600">Drag & drop your PDF here, or click to browse</p>
+            <input id="fileInput" type="file" accept="application/pdf" class="hidden" />
+            <button id="browseBtn" class="px-3 py-1.5 rounded-md bg-amz-orange text-black text-sm hover:bg-amz-orange-600">Choose file</button>
+            <div id="fileMeta" class="text-xs text-slate-500"></div>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="analyzeBtn" class="px-4 py-2 rounded-md bg-amz-teal text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110">Analyze PII</button>
+
+            <div class="flex items-center gap-2 text-sm">
+              <label class="font-medium">Mode</label>
+              <select id="mode" class="px-3 py-2 border rounded-md text-sm">
+                <option value="mask">Mask &lt;TAG&gt;</option>
+                <option value="redact">Black-box Redact</option>
+                <option value="pseudo">Pseudonymize (realistic)</option>
+              </select>
+            </div>
+
+            <label class="flex items-center gap-2 text-sm">
+              <input id="withReport" type="checkbox" class="rounded border-slate-300">
+              Include report (ZIP)
+            </label>
+
+            <label class="flex items-center gap-2 text-sm">
+              <input id="overlay" type="checkbox" class="rounded border-slate-300">
+              Preserve layout (overlay)
+            </label>
+
+            <button id="anonymizeBtn" class="ml-auto px-4 py-2 rounded-md bg-amz-orange text-black text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amz-orange-600">Anonymize PDF</button>
+          </div>
+
+          <p class="mt-2 text-xs text-slate-500">Overlay preserves original look with black boxes (redaction only). To use Mask or Pseudonymize, turn overlay off. Reports are available for rebuild mode.</p>
+        </div>
+
+        <!-- Detection Summary -->
+        <div class="bg-white rounded-xl shadow-amz border border-slate-200 p-5">
+          <h2 class="text-base font-semibold mb-3">Detection Summary</h2>
+          <div id="summary" class="text-sm text-slate-700 min-h-[96px]">
+            <div class="text-slate-500">Run <span class="font-medium">Analyze PII</span> to see findings.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right column: Activity / Output -->
+      <aside class="space-y-6">
+        <div class="bg-white rounded-xl shadow-amz border border-slate-200 p-5">
+          <h2 class="text-base font-semibold mb-3">Activity</h2>
+          <div id="log" class="text-sm text-slate-700 space-y-2 max-h-72 overflow-auto scroll-slim"></div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-amz border border-slate-200 p-5">
+          <h2 class="text-base font-semibold mb-3">Result</h2>
+          <div id="result" class="text-sm text-slate-700 space-y-3">
+            <div class="text-slate-500">When ready, your anonymized file will appear here.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 hidden px-4 py-2 rounded-full bg-amz-navy text-white text-sm shadow-lg"></div>
+
+  <script>
+    const API_BASE = ""; // same-origin via run_all.py
+
+    const dz = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const browseBtn = document.getElementById('browseBtn');
+    const fileMeta = document.getElementById('fileMeta');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const anonymizeBtn = document.getElementById('anonymizeBtn');
+    const modeSel = document.getElementById('mode');
+    const overlayChk = document.getElementById('overlay');
+    const withReportChk = document.getElementById('withReport');
+    const logEl = document.getElementById('log');
+    const summaryEl = document.getElementById('summary');
+    const resultEl = document.getElementById('result');
+    const toast = document.getElementById('toast');
+
+    let currentFile = null;
+
+    function toastMsg(msg){ toast.textContent = msg; toast.classList.remove('hidden'); setTimeout(()=> toast.classList.add('hidden'), 2200); }
+    function log(msg){ const row = document.createElement('div'); row.innerHTML = `<span class=\"text-slate-400\">•</span> ${msg}`; logEl.prepend(row); }
+    function setBusy(btn, busy){ if (busy){ btn.disabled = true; btn.dataset.label = btn.textContent; btn.innerHTML = `<svg class=\"inline w-4 h-4 animate-spin mr-2\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\"><circle cx=\"12\" cy=\"12\" r=\"10\" stroke-opacity=\".15\"/><path d=\"M22 12a10 10 0 0 1-10 10\"/></svg>${btn.dataset.label || 'Working...'}`; } else { btn.disabled = false; if (btn.dataset.label) btn.textContent = btn.dataset.label; } }
+
+    function prettySummary(json){
+      const { regex, spacy, llm } = json?.pii_detection || {};
+      const wrap = [];
+      if (regex && Object.keys(regex).length){ wrap.push(`<div><div class='font-medium mb-1'>Regex</div><ul class='list-disc ml-5 space-y-0.5'>${Object.entries(regex).map(([k,v])=>`<li><span class='font-medium'>${k}</span>: ${v.map(x=>`<code class='bg-slate-100 px-1 rounded'>${x}</code>`).join(', ')}</li>`).join('')}</ul></div>`); }
+      if (spacy && Object.keys(spacy).length){ wrap.push(`<div><div class='font-medium mb-1'>NER (spaCy)</div><ul class='list-disc ml-5 space-y-0.5'>${Object.entries(spacy).map(([k,v])=>`<li><span class='font-medium'>${k}</span>: ${v.map(x=>`<code class='bg-slate-100 px-1 rounded'>${x}</code>`).join(', ')}</li>`).join('')}</ul></div>`); }
+      if (llm){ wrap.push(`<div><div class='font-medium mb-1'>LLM note</div><div class='text-slate-600 whitespace-pre-wrap'>${llm}</div></div>`); }
+      summaryEl.innerHTML = wrap.length ? wrap.join('<hr class=\"my-3 border-slate-200\"/>') : '<div class="text-slate-500">No PII found.</div>';
+    }
+
+    function setFile(file){
+      currentFile = file;
+      if (!file){ fileMeta.textContent = ''; analyzeBtn.disabled = true; anonymizeBtn.disabled = true; return; }
+      fileMeta.textContent = `${file.name} · ${(file.size/1024/1024).toFixed(2)} MB`;
+      analyzeBtn.disabled = false; anonymizeBtn.disabled = false;
+      log(`Selected file: <span class='font-medium'>${file.name}</span>`);
+    }
+
+    // drag & drop
+    dz.addEventListener('click', ()=> fileInput.click());
+    browseBtn.addEventListener('click', (e)=>{ e.preventDefault(); fileInput.click(); });
+    ;['dragenter','dragover'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.add('dragover'); }));
+    ;['dragleave','drop'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.remove('dragover'); }));
+    dz.addEventListener('drop', (e)=>{ const f = e.dataTransfer.files?.[0]; if (f && f.type === 'application/pdf') setFile(f); else toastMsg('Please drop a PDF.'); });
+    fileInput.addEventListener('change', ()=>{ const f = fileInput.files?.[0]; if (f) setFile(f); });
+
+    // overlay lock: overlay => force redact + disable report
+    function syncOverlayUI(){
+      if (overlayChk.checked){
+        modeSel.value = 'redact';
+        modeSel.disabled = true;
+        withReportChk.checked = false;
+        withReportChk.disabled = true;
+      } else {
+        modeSel.disabled = false;
+        withReportChk.disabled = false;
+      }
+    }
+    document.addEventListener('DOMContentLoaded', syncOverlayUI);
+    overlayChk.addEventListener('change', syncOverlayUI);
+
+    // Analyze PII
+    analyzeBtn.addEventListener('click', async ()=>{
+      if (!currentFile) return toastMsg('Select a PDF first');
+      try {
+        setBusy(analyzeBtn, true);
+        const fd = new FormData(); fd.append('file', currentFile);
+        const r = await fetch(`${API_BASE}/upload-pdf/`, { method: 'POST', body: fd });
+        const json = await r.json();
+        if (!r.ok || json.error){ throw new Error(json.error || 'Analyze failed'); }
+        prettySummary(json); log('PII analysis complete');
+      } catch(err){ console.error(err); toastMsg(err.message || 'Analyze failed'); }
+      finally { setBusy(analyzeBtn, false); }
+    });
+
+    // Anonymize (overlay vs bundle vs pdf)
+    anonymizeBtn.addEventListener('click', async ()=>{
+      if (!currentFile) return toastMsg('Select a PDF first');
+      const overlay = overlayChk.checked;
+      const withReport = withReportChk.checked;
+      const mode = modeSel.value;
+
+      try {
+        setBusy(anonymizeBtn, true);
+        const fd = new FormData();
+        let endpoint = '';
+        if (overlay) { fd.append('file', currentFile); endpoint = `${API_BASE}/redact-pdf/`; }
+        else if (withReport) { fd.append('mode', mode); fd.append('file', currentFile); endpoint = `${API_BASE}/anonymize-bundle/`; }
+        else { fd.append('mode', mode); fd.append('file', currentFile); endpoint = `${API_BASE}/anonymize-pdf/`; }
+
+        const r = await fetch(endpoint, { method: 'POST', body: fd });
+        const ct = (r.headers.get('content-type') || '').toLowerCase();
+        if (ct.includes('application/pdf') || ct.includes('application/zip') || ct.includes('octet-stream')){
+          const blob = await r.blob(); const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const isZip = ct.includes('zip') || (r.headers.get('content-disposition')||'').includes('.zip');
+          const dlName = isZip ? `privacy_bundle_${currentFile.name.replace(/\.pdf$/i,'')}.zip` : `sanitized_${currentFile.name}`;
+          a.href = url; a.download = dlName; a.click(); URL.revokeObjectURL(url);
+          resultEl.innerHTML = `<div class='text-emerald-700'>Download ready: ${dlName}</div>`; log('Anonymized file ready');
+        } else {
+          const json = await r.json().catch(()=>({error:'Failed'}));
+          throw new Error(json.error || 'Anonymize failed');
+        }
+      } catch(err){ console.error(err); toastMsg(err.message || 'Anonymize failed'); }
+      finally { setBusy(anonymizeBtn, false); }
+    });
+  </script>
+</body>
+</html>
